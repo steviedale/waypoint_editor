@@ -7,18 +7,30 @@ from visualization_msgs.msg import MarkerArray, Marker
 from geometry_msgs.msg import Point
 from rclpy.qos import qos_profile_system_default
 from waypoint_editor_msgs.srv import SetString
+import os
 
 
 class WaypointEditor(Node):
     def __init__(self):
         super().__init__('waypoint_editor')
-        self.service = self.create_service(Trigger, "load", self.load_cb)
-        self.file_path = "/home/stevie/workspaces/tera/tera_ws/src/tera_ros2/tera_support/toolpaths/left_side/Critical2/HalfInchSpacing.yaml"
+        self.load_service = self.create_service(Trigger, "load", self.load_cb)
+        self.set_file_service = self.create_service(SetString, "set_file", self.set_file_cb)
+        self.clear_service = self.create_service(Trigger, 'clear', self.clear_cb)
+        self.file_start = '/home/stevie/workspaces/tera/tera_ws/src/tera_ros2/tera_support/toolpaths/right_side'
+        self.file_path = ''
+        self.id_count = 0
+        # self.file_path = "/home/stevie/workspaces/tera/tera_ws/src/tera_ros2/tera_support/toolpaths/left_side/Critical2/HalfInchSpacing.yaml"
         # self.file_path = "/home/stevie/workspaces/waypoint_ws/src/waypoint_editor/left_side/Critical2/HalfInchSpacing.yaml"
         self.publisher = self.create_publisher(MarkerArray, 'markers', qos_profile_system_default)
 
-    def set_input_cb(self, request, response):
-        pass
+    def set_file_cb(self, request, response):
+        self.file_path = os.path.join(self.file_start, request.str)
+        response.success = True
+        return response
+
+    def clear_cb(self, request, response):
+        for i in range(self.id_count):
+            m = Marker()
 
     def load_cb(self, request, response):
         self.get_logger().warn("now we're cookin'")
@@ -27,7 +39,6 @@ class WaypointEditor(Node):
             data = yaml.load(f)
 
         array = MarkerArray()
-        id = 0
 
         for waypoints in data[0]['region']:
             if 'waypoints' not in waypoints:
@@ -41,8 +52,8 @@ class WaypointEditor(Node):
             line_marker.color.r = 0.0
             line_marker.color.g = 1.0
             line_marker.color.b = 0.0
-            line_marker.id = id
-            id += 1
+            line_marker.id = self.id_count
+            self.id_count += 1
 
             for waypoint in waypoints['waypoints']:
                 waypoint = waypoint['tool_poses']
@@ -63,7 +74,7 @@ class WaypointEditor(Node):
                 marker.pose.orientation.y = float(waypoint['orientation']['y'])
                 marker.pose.orientation.z = float(waypoint['orientation']['z'])
                 marker.pose.orientation.w = float(waypoint['orientation']['w'])
-                marker.id = id
+                marker.id = self.id_count
 
                 point = Point()
                 point.x = float(waypoint['position']['x'])
@@ -74,7 +85,7 @@ class WaypointEditor(Node):
                 array.markers.append(marker)
                 # self.publisher.publish(array)
                 # time.sleep(0.5)
-                id += 1
+                self.id_count += 1
 
             array.markers.append(line_marker)
             self.publisher.publish(array)
