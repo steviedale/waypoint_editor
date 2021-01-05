@@ -6,6 +6,7 @@ import time
 from visualization_msgs.msg import MarkerArray, Marker
 from geometry_msgs.msg import Point
 from rclpy.qos import qos_profile_system_default
+from waypoint_editor_msgs.srv import SetString
 
 
 class WaypointEditor(Node):
@@ -15,6 +16,9 @@ class WaypointEditor(Node):
         self.file_path = "/home/stevie/workspaces/tera/tera_ws/src/tera_ros2/tera_support/toolpaths/left_side/Critical2/HalfInchSpacing.yaml"
         # self.file_path = "/home/stevie/workspaces/waypoint_ws/src/waypoint_editor/left_side/Critical2/HalfInchSpacing.yaml"
         self.publisher = self.create_publisher(MarkerArray, 'markers', qos_profile_system_default)
+
+    def set_input_cb(self, request, response):
+        pass
 
     def load_cb(self, request, response):
         self.get_logger().warn("now we're cookin'")
